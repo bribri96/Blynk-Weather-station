@@ -1,5 +1,5 @@
 #define myName "/ext/file.bin"
-#define version "0.2.5"
+#define version "0.2.6"
 
 #define numL 200
 
@@ -74,6 +74,8 @@ void setup(){
 
 }
 
+int sended = 0;
+
 void loop() {
   long timed1 = millis();
   //terminal.print("Sum: ");terminal.print(sum);terminal.print("\tAvg: ");terminal.print(avg);terminal.print("\tVin: ");Serial.println(vin);
@@ -98,14 +100,17 @@ void loop() {
     sendData(float(vin), "V0");
     sendVersion("V3");
     sendData(flag, "V4");
-    if(temp > -120)
-      sendData(temp, "V2");
+    if(temp > -120){
+      int send_code = sendData(temp, "V2");
+      if(send_code == 200)
+        sended = 1;
     //sendData(String(version), "V3");
+    }
 
     Serial.printf("Connection status: %d\n", WiFi.status());
   }
 
-  if((millis() - t1) > deltat){
+  if(((millis() - t1) > deltat) || (sended)){
     t1 = millis();
       //ESP.deepSleep(tsleep, WAKE_RF_DEFAULT);
     if((WiFi.status() == WL_CONNECTED)) {    // wait for WiFi connection
@@ -147,10 +152,12 @@ int sendData(float value, String pin){
   Serial.println(http.begin(server_blynk, port_blynk, String("/") + auth + String("/pin/") + pin));
   //"/84950346964648d8ad9a1ccecd774691/pin/V10"
   http.addHeader("Content-Type", "application/json");//String("/") + auth + String("/pin/") + pin
-  Serial.println(http.sendRequest("PUT",(uint8_t *) payload.c_str(), payload.length()));
+  int codice_ritorno = http.sendRequest("PUT",(uint8_t *) payload.c_str(), payload.length());
+  Serial.println(codice_ritorno);
   Serial.println(http.writeToStream(&Serial));
   http.end();
   Serial.println();
+  return codice_ritorno;
 }
 
 int sendData(int value, String pin){
@@ -160,9 +167,11 @@ int sendData(int value, String pin){
   Serial.println(http.begin(server_blynk, port_blynk, String("/") + auth + String("/pin/") + pin));
   //"/84950346964648d8ad9a1ccecd774691/pin/V10"
   http.addHeader("Content-Type", "application/json");//String("/") + auth + String("/pin/") + pin
-  Serial.println(http.sendRequest("PUT",(uint8_t *) payload.c_str(), payload.length()));
+  int codice_ritorno = http.sendRequest("PUT",(uint8_t *) payload.c_str(), payload.length());
+  Serial.println(codice_ritorno);
   Serial.println(http.writeToStream(&Serial));
   http.end();
+  return codice_ritorno;
 }
 
 int sendVersion(String pin){
