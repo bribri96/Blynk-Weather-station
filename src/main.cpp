@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <SimpleTimer.h>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
@@ -14,6 +15,8 @@
 int ONE_WIRE_BUS = 12;
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
+
+SimpleTimer timer;
 
 char auth[] = "84950346964648d8ad9a1ccecd774691";
 char ssid[] = "Bill Wi the Science Fi";
@@ -72,14 +75,20 @@ void setup(){
 
   sensors.begin();
 
+  timer.setInterval(deltat2, spedisciDati);
+  timer.setInterval(deltat, aggiornaDormi);
+
 }
 
 int sended = 0;
 
 void loop() {
-  long timed1 = millis();
+
+  timer.run();
+
+  /*long timed1 = millis();
   //terminal.print("Sum: ");terminal.print(sum);terminal.print("\tAvg: ");terminal.print(avg);terminal.print("\tVin: ");Serial.println(vin);
-  if((millis() - t2) > deltat2){
+  /*if((millis() - t2) > deltat2){
     t2 = millis();
 
     sensors.requestTemperatures(); // Send the command to get temperatures
@@ -89,7 +98,7 @@ void loop() {
     /*Serial.print(String("/") + auth + String("/pin/") + pin); Serial.print("\t");
     Serial.print("/84950346964648d8ad9a1ccecd774691/pin/V14");Serial.print("\t");
     Serial.println(String("/84950346964648d8ad9a1ccecd774691/pin/V14").compareTo(String("/") + auth + String("/pin/") + pin));
-    */
+
 
 
     double vin = readVin();
@@ -108,9 +117,9 @@ void loop() {
     }
 
     Serial.printf("Connection status: %d\n", WiFi.status());
-  }
+  }*/
 
-  if(((millis() - t1) > deltat) || (sended)){
+  /*if(((millis() - t1) > deltat) || (sended)){
     t1 = millis();
       //ESP.deepSleep(tsleep, WAKE_RF_DEFAULT);
     if((WiFi.status() == WL_CONNECTED)) {    // wait for WiFi connection
@@ -131,8 +140,8 @@ void loop() {
       }
     }
     ESP.deepSleep(tsleep);
-  }
-
+  }*/
+/*
   long timed2 = millis();
   long dddddeltatime = timed2 - timed1;
 
@@ -141,7 +150,7 @@ void loop() {
 
   if(dddddeltatime < timedmin)
     timedmin = dddddeltatime;
-
+*/
   //Serial.printf("\n******\nLoop time: %dms, Max loop: %dms, Min loop: %dms.\n",dddddeltatime, timedmax, timedmin);
 }
 
@@ -195,4 +204,55 @@ double readVin(){
   double avg = (double) sum / numL;
   double vin = (double) avg / (Kc * 1024.0f);
   return vin;
+}
+
+void aggiornaDormi(){
+  if((WiFi.status() == WL_CONNECTED)) {    // wait for WiFi connection
+    t_httpUpdate_return ret = ESPhttpUpdate.update(server_upd, port_upd, myName, version);
+
+    switch(ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        break;
+
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES\n");
+        break;
+
+      case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK\n");
+        break;
+    }
+  }
+  ESP.deepSleep(tsleep);
+}
+
+void spedisciDati(){
+  sensors.requestTemperatures(); // Send the command to get temperatures
+
+  String pin = "V10";
+
+  /*Serial.print(String("/") + auth + String("/pin/") + pin); Serial.print("\t");
+  Serial.print("/84950346964648d8ad9a1ccecd774691/pin/V14");Serial.print("\t");
+  Serial.println(String("/84950346964648d8ad9a1ccecd774691/pin/V14").compareTo(String("/") + auth + String("/pin/") + pin));
+  */
+
+  double vin = readVin();
+  float temp = sensors.getTempCByIndex(0);
+  Serial.println(temp);
+
+  sendData(int(millis()/1000), "V1");
+  sendData(float(vin), "V0");
+  sendVersion("V3");
+  sendData(flag, "V4");
+  if(temp > -120){
+    int send_code = sendData(temp, "V2");
+    if(send_code == 200){
+      sended = 1;
+      aggiornaDormi();
+    }
+  //sendData(String(version), "V3");
+  }
+
+  Serial.printf("Connection status: %d\n", WiFi.status());
 }
