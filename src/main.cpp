@@ -35,6 +35,9 @@ int sendData(int, String);
 int sendVersion(String);
 double readVin();
 
+void spedisciDati();
+void aggiornaDormi();
+
 int flag = 0;
 
 long t1 = 0;
