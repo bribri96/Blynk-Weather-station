@@ -3,6 +3,7 @@
 
 //add the following line to the build option
 //build_flags = '-DSSID_PREP="your_wifi_ssid_goes_here"' '-DPASS_PREP="your_wifi_password_goes_here"' '-DAUTH_PREP="your_token_goes_here"'
+//
 //pin to connect
 //EN 5V
 //GPIO0 5V
