@@ -49,7 +49,6 @@ DallasTemperature sensors(&oneWire);
 
 SimpleTimer timer;
 
-
 char ssid[] = SSID_PREP;//wifi ssid
 char pass[] = PASS_PREP;//wifi password
 char auth[] = AUTH_PREP;//blynk token
@@ -72,43 +71,59 @@ void aggiornaDormi();//function to search update and deepSleep
 
 
 const long deltat = 1000*15;//max time to be awake
-const long deltat2 = 1000*2;//delay beetwen send data to server
+const long deltat2 = 1000*1;//delay beetwen send data to server
 
 const long tsleep = 1000*1000*60*5;//time to sleep (5 mins.)
+//const long tsleep = 1000*1000*1;//time to sleep (1 sec.)
+
+DeviceAddress tempDeviceAddress;
+int  resolution = 12;
+unsigned long lastTempRequest = 0;
+int  delayInMillis = 0;
+
+//void aggiornaSitua();
 
 void setup(){
+  IPAddress ip(192, 168, 1, 130); // where xx is the desired IP Address
+  IPAddress gateway(192, 168, 1, 254); // set gateway to match your network
+  IPAddress subnet(255, 255, 255, 0); // set subnet mask to match your network
+  WiFi.config(ip, gateway, subnet);
 
   Serial.begin(115200);
-  Serial.setDebugOutput(true);
-
+  //Serial.setDebugOutput(true);
+  //aggiornaSitua();//0
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
-
+  //aggiornaSitua();//1
   while (WiFi.status() != WL_CONNECTED)  {
     delay(100);
     Serial.println(WiFi.status());
   }
-
+  //aggiornaSitua();//2
   sensors.begin();//init ads sensor
+  sensors.getAddress(tempDeviceAddress, 0);
+  sensors.setResolution(tempDeviceAddress, resolution);
+  delayInMillis = 750 / (1 << (12 - resolution));
+  sensors.setWaitForConversion(false);
 
   timer.setInterval(deltat2, spedisciDati);
   timer.setInterval(deltat, aggiornaDormi);
-
+  //aggiornaSitua();//3
   //--**ADC
   ads.begin(D2, D1);//init i2c on D2 and D1 pin(i modified the ads library to make this)
   ads.setGain(GAIN_ONE);//+-4.096V
   //--**ADC
-
+  //aggiornaSitua();//4
   if(readVin() < 3.5) {
-    sendlowbat();
+    sendlowbat();//********************************************************************************
   }
-
+  //aggiornaSitua();//5
 }
 
 int sended = 0;
 
 void loop() {
-
+  spedisciDati();
   timer.run();
 
 }
@@ -173,6 +188,7 @@ double readVin(){
 }
 
 void aggiornaDormi(){
+
   if((WiFi.status() == WL_CONNECTED)) {    // wait for WiFi connection
     t_httpUpdate_return ret = ESPhttpUpdate.update(server_upd, port_upd, myName, version);//send to the update server the name of the device and the firmware version
 
@@ -195,16 +211,20 @@ void aggiornaDormi(){
 
 void spedisciDati(){//retrive sensor data and send to the blynk server
   //this function is orrible, i was probebly drunk, i will rewrite it one day
+  //aggiornaSitua();//6
   sensors.requestTemperatures();
+  lastTempRequest = millis();
 
+  //aggiornaSitua();//7
   double vin = readVin();
-  float temp = sensors.getTempCByIndex(0);
-  Serial.println(temp);
-
-  sendData(int(millis()/1000), "V1");
+  //aggiornaSitua();//8
+    //aggiornaSitua();//9
   sendData(float(vin), "V0");
+    //aggiornaSitua();//10
   sendVersion("V2");
+    //aggiornaSitua();//11
   sendData((int) random(100), "V3");
+    //aggiornaSitua();//12
 
   int16_t adc0, adc1, adc2, adc3;
   float Voltage0,Voltage1,Voltage2,Voltage3;
@@ -224,7 +244,7 @@ void spedisciDati(){//retrive sensor data and send to the blynk server
   adc3 = ads.readADC_SingleEnded(3);
   Voltage3 = (adc3 * 0.125)/1000;
   delay(20);
-
+  //aggiornaSitua();//13
   adc0 = ads.readADC_SingleEnded(0);
   Voltage0 = (adc0 * 0.125)/1000;
   delay(20);
@@ -240,28 +260,47 @@ void spedisciDati(){//retrive sensor data and send to the blynk server
   adc3 = ads.readADC_SingleEnded(3);
   Voltage3 = (adc3 * 0.125)/1000;
   delay(20);
-
+  //aggiornaSitua();//14
   Voltage2 *= 5.31969;
 
-  Serial.print("(V Solare) AIN0: "); Serial.print(adc0);Serial.print("\tVin0: "); Serial.println(Voltage0);
-  Serial.print("(V in) AIN0: "); Serial.print(adc2);Serial.print("\tVin0: "); Serial.println(Voltage2);
-  Serial.print("(V LM35) AIN0: "); Serial.print(adc3);Serial.print("\tVin0: "); Serial.println(Voltage3);
-
-  sendData(Voltage0, "V4");//Vin ADS
+  //Serial.print("(V Solare) AIN0: "); Serial.print(adc0);Serial.print("\tVin0: "); Serial.println(Voltage0);
+  //Serial.print("(V in) AIN0: "); Serial.print(adc2);Serial.print("\tVin0: "); Serial.println(Voltage2);
+  //Serial.print("(V LM35) AIN0: "); Serial.print(adc3);Serial.print("\tVin0: "); Serial.println(Voltage3);
+  //aggiornaSitua();//15
+  sendData(Voltage0, "V4");//Vin solare
 
   sendData(Voltage1, "V30");//Vin pioggia
-
-  sendData(Voltage2, "V5");//V solare
+  //aggiornaSitua();//16
+  sendData(Voltage2, "V5");//V ads
 
   sendData(Voltage3, "V26");//V LM35
+  //aggiornaSitua();//17
+
+  while(millis() - lastTempRequest < delayInMillis){}
+
+  //aggiornaSitua();//18
+
+  float temp = sensors.getTempCByIndex(0);
+  Serial.println(temp);
+
+  //aggiornaSitua();//19
+
 
   if(temp > -120){//failed read
     int send_code = sendData(temp, "V10");//DS18B20
     if(send_code == 200){
-      sended = 1;
       aggiornaDormi();
     }
   }
+  //aggiornaSitua();//20
 
-  Serial.printf("Connection status: %d\n", WiFi.status());
+  sendData(int(millis()/1000), "V1");
+  //aggiornaSitua();//21
+  //Serial.printf("Connection status: %d\n", WiFi.status());
 }
+/*
+int iter = 0;
+void aggiornaSitua(){
+  Serial.print(millis()); Serial.print("ms\titer: ");Serial.println(iter);
+  iter++;
+}*/
