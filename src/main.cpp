@@ -203,7 +203,8 @@ void spedisciDati(){//retrive sensor data and send to the blynk server
 
   sendData(int(millis()/1000), "V1");
   sendData(float(vin), "V0");
-  sendVersion("V3");
+  sendVersion("V2");
+  sendData((int) random(100), "V3");
 
   int16_t adc0, adc1, adc2, adc3;
   float Voltage0,Voltage1,Voltage2,Voltage3;
@@ -246,16 +247,16 @@ void spedisciDati(){//retrive sensor data and send to the blynk server
   Serial.print("(V in) AIN0: "); Serial.print(adc2);Serial.print("\tVin0: "); Serial.println(Voltage2);
   Serial.print("(V LM35) AIN0: "); Serial.print(adc3);Serial.print("\tVin0: "); Serial.println(Voltage3);
 
-  sendData(Voltage0, "V5");
+  sendData(Voltage0, "V4");//Vin ADS
 
-  sendData(Voltage1, "V8");
+  sendData(Voltage1, "V30");//Vin pioggia
 
-  sendData(Voltage2, "V6");
+  sendData(Voltage2, "V5");//V solare
 
-  sendData(Voltage3, "V7");
+  sendData(Voltage3, "V26");//V LM35
 
   if(temp > -120){//failed read
-    int send_code = sendData(temp, "V2");
+    int send_code = sendData(temp, "V10");//DS18B20
     if(send_code == 200){
       sended = 1;
       aggiornaDormi();
