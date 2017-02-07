@@ -1,5 +1,5 @@
 #define myName "/ext/file.bin"
-#define version "0.3.5"
+#define version "0.3.6"
 
 //add the following line to the build option
 //build_flags = '-DSSID_PREP="your_wifi_ssid_goes_here"' '-DPASS_PREP="your_wifi_password_goes_here"' '-DAUTH_PREP="your_token_goes_here"'
