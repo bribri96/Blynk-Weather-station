@@ -205,9 +205,10 @@ int sendVersion(String pin){
 
 void sendlowbat(){
   HTTPClient http;
-  Serial.println("\nstart:");
-  String sendLowBatS = "/lowbat/";
+  Serial.println("\nstarttttttttttt:");
+  String sendLowBatS = "/lowbat";
   sendLowBatS += myName;
+  Serial.println(sendLowBatS);
   Serial.println(http.begin(server_blynk, port_telegram, sendLowBatS ));
   int codice_ritorno = http.GET();
   Serial.println(codice_ritorno);
